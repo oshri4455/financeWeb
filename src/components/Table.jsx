@@ -133,37 +133,37 @@ const [actualPrice,setActualPrice] = useState(0)
 
 
 
-//הצגת נתונים בטבלה 
-const handleChange = async (index, key, value) => {
+//הצגת נתונים בטבלה const handleChange = async (index, key, value) => {
   let updatedTickers = [...props.Tickers];
 
   if (key === 'Ticker') {
     const uppercaseInput = value.toUpperCase();
-    updatedTickers[index][key] = uppercaseInput; // עדכון ה-Ticker לאותיות גדולות
-
+    // טען מחיר עבור ה-Ticker המעודכן
     try {
       const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${uppercaseInput}&token=${apiKey}`);
-      if(response && response.data && response.data.c !== undefined) {
-        const stockPrice = response.data.c;
-        updatedTickers[index].price = stockPrice; // עדכון המחיר מה-API
+      if (response.data && response.data.c !== undefined) {
+        // עדכון ה-Ticker והמחיר במערך העותק
+        updatedTickers[index].Ticker = uppercaseInput;
+        updatedTickers[index].price = response.data.c;
       } else {
-        console.log("No valid data for ticker:", uppercaseInput);
-        // Consider handling the case when API doesn't return a valid price.
-        // Maybe keep the previous price or set it to null/undefined.
+        console.error('No price data received for:', uppercaseInput);
+        // אופציונלי: ניתן להחליט כיצד לטפל אם אין נתוני מחיר
       }
     } catch (error) {
       console.error('Error fetching stock price:', error);
-      // Consider handling errors more gracefully.
-      // Maybe keep the previous price or set it to null/undefined.
+      // אופציונלי: ניתן להחליט כיצד לטפל בשגיאה
     }
   } else {
-    // For other keys, update the value directly. Convert to number if applicable.
+    // עבור כל שדה אחר, עדכן את הערך ישירות
     if (['price', 'Quantity', 'ExitPrice', 'stopLose'].includes(key)) {
-      updatedTickers[index][key] = value ? parseFloat(value) : updatedTickers[index][key];
+      updatedTickers[index][key] = value ? parseFloat(value) : 0;
     } else {
       updatedTickers[index][key] = value;
     }
   }
+
+  // עדכון הסטייט עם המערך המעודכן
+  props.setTickers(
 
   // Finally, update the state with the new tickers array.
   props.setTickers(
