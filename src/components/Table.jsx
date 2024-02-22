@@ -133,129 +133,37 @@ const [actualPrice,setActualPrice] = useState(0)
 
 
 
-//הצגת נתונים בטבלה 
-const handleChange = (index, key, value) => {
-  const newTickers = [...props.Tickers];
-  newTickers[index][key] = Number(value);
-  newTickers[index][key] = String(value);
-  
+//הצגת נתונים בטבלה
+
+const handleChange = async (index, key, value) => {
+  let updatedTickers = [...props.Tickers];
 
   if (key === 'Ticker') {
     const uppercaseInput = value.toUpperCase();
-    setTicker(String(uppercaseInput));
-    axios
-      .get(`https://finnhub.io/api/v1/quote?symbol=${value}&token=${apiKey}`)
-      .then((response) => {
-        const stockPrice = response.data.c;
-        setActualPrice(Number(stockPrice));
-        document.getElementById(`Actual${index}`).innerHTML = `$${stockPrice}`;
-        newTickers[index].price = Number(stockPrice);
-        setPrice(Number(stockPrice));
+    // עדכון ה-Ticker לאותיות גדולות, אך לא עדכון המחיר עדיין
+    updatedTickers[index][key] = uppercaseInput;
 
-        if (newTickers[index].Quantity && newTickers[index].price) {
-          newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-        } else {
-          newTickers[index].TotalCost = 0;
-        }
-
-        localStorage.setItem('Tickers', JSON.stringify(newTickers));
-        localStorage.setItem('TickerValue', value);
-        props.setTickers(newTickers);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-  } else if (key === 'price') {
-    setPrice(Number(value));
-    newTickers[index].price = Number(value);
-
-    if (newTickers[index].Quantity && newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-    } else if (newTickers[index].Quantity && !newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice;
-    } else {
-      newTickers[index].TotalCost = 0;
+    try {
+      // ביצוע הקריאה ל-API
+      const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${uppercaseInput}&token=${apiKey}`);
+      // בדיקה אם קיבלנו תגובה תקינה עם מחיר
+      if (response.data && response.data.c !== undefined) {
+        updatedTickers[index].price = response.data.c; // עדכון המחיר
+      } else {
+        console.log('Received invalid data for', uppercaseInput);
+        // השארת המחיר הקודם או טיפול אחר לבחירתך
+      }
+    } catch (error) {
+      console.error('Error fetching stock price:', error);
+      // השארת המחיר הקודם או טיפול אחר לבחירתך
     }
-
-    localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('priceValue', value);
-    props.setTickers(newTickers);
-
-    if (value && exitPrice && Quantity) {
-      newTickers[index].ExpectedProfit =
-        newTickers[index].ExitPrice * newTickers[index].Quantity - newTickers[index].Quantity * newTickers[index].price;
-    } else {
-      newTickers[index].ExpectedProfit = 0;
-    }
-
-    
-  } else if (key === 'Quantity') {
-    setQuantity(Number(value));
-    newTickers[index].Quantity = Number(value);
-
-    if (newTickers[index].Quantity && newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-    }
-   else if (newTickers[index].Quantity && !newTickers[index].price) {
-    newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice;
-  }else {
-      newTickers[index].TotalCost = 0;
-    }
-
-    localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('inputValue', value);
-    props.setTickers(newTickers);
-    
-
-    //when change quantity expicted profit changed
-    if (value && exitPrice) {
-      newTickers[index].ExpectedProfit =
-        newTickers[index].ExitPrice * newTickers[index].Quantity - newTickers[index].Quantity * newTickers[index].price;
-    } else {
-      newTickers[index].ExpectedProfit = 0;
-    }
-
-    /*if(one>0){
-      setActualPrice(0)
-    }
-    setOne(0)*/
-    
-  } else if (key === 'ExitPrice') {
-    setExitPrice(Number(value));
-    newTickers[index].ExitPrice = Number(value);
-
-    if (value && Quantity && price) {
-      newTickers[index].ExpectedProfit =
-        newTickers[index].ExitPrice * newTickers[index].Quantity - newTickers[index].Quantity * newTickers[index].price;
-    } else {
-      newTickers[index].ExpectedProfit = 0;
-    }
-
-    localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('exitValue', value);
-    props.setTickers(newTickers);
-  } else if (key === 'stopLose') {
-    setStopLose(Number(value));
-    newTickers[index].stopLose = Number(value);
-
-    if (value) {
-      newTickers[index].ExpectedLose = Math.abs(
-        newTickers[index].stopLose * newTickers[index].Quantity - newTickers[index].price * newTickers[index].Quantity
-      );
-    } else {
-      newTickers[index].ExpectedLose = 0;
-    }
-
-    if (!newTickers[index].Quantity || !newTickers[index].price) {
-      newTickers[index].TotalCost = 0;
-    }
-
-    localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('stopValue', value);
-    props.setTickers(newTickers);
+  } else {
+    // עדכון ישיר של הערך, לאחר המרה למספר אם נדרש
+    updatedTickers[index][key] = ['price', 'Quantity', 'ExitPrice', 'stopLose'].includes(key) ? parseFloat(value) || updatedTickers[index][key] : value;
   }
 
-  //setActualPrice(0)
+  // עדכון הסטייט עם המערך המעודכן
+  props.setTickers(updatedTickers);
 };
 
 //החלפת צבע של הכפתורים
@@ -406,23 +314,24 @@ useEffect(() => {
 
 
 
+  // כאן תחליף במפתח ה-API שלך
+  const apiKey = 'ci26vg1r01qqjoq0o0ngci26vg1r01qqjoq0o0o0';
 
-const apiKey = 'ci26vg1r01qqjoq0o0ngci26vg1r01qqjoq0o0o0';
-useEffect(() => {
-  const fetchStockPrice = async () => {
-    try {
-      const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${Ticker}&token=${apiKey}`);
-      const price = response.data.c;
-      setPrice(price);
-    } catch (error) {
-      console.error('Error:', error);
+  useEffect(() => {
+    if (ticker) {
+      const fetchStockPrice = async () => {
+        try {
+          const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
+          setPrice(response.data.c); // 'c' מייצג את המחיר הנוכחי ב-API של Finnhub
+        } catch (error) {
+          console.error('Error fetching stock price:', error);
+          setPrice(0); // איפוס המחיר במקרה של שגיאה
+        }
+      };
+
+      fetchStockPrice();
     }
-  };
-
-  if (Ticker) {
-    fetchStockPrice();
-  }
-}, [Ticker]);
+  }, [ticker, apiKey]); // ה-Effect יתבצע מחדש כל פעם שה-Ticker
 
 
 
