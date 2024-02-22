@@ -134,44 +134,37 @@ const [actualPrice,setActualPrice] = useState(0)
 
 
 //הצגת נתונים בטבלה
- const handleChange = async (index, key, value) => {
+
+const handleChange = async (index, key, value) => {
   let updatedTickers = [...props.Tickers];
 
   if (key === 'Ticker') {
     const uppercaseInput = value.toUpperCase();
+    // עדכון ה-Ticker לאותיות גדולות, אך לא עדכון המחיר עדיין
     updatedTickers[index][key] = uppercaseInput;
 
     try {
+      // ביצוע הקריאה ל-API
       const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${uppercaseInput}&token=${apiKey}`);
-      if (response.data && response.data.c && response.data.c !== 0) {
-        updatedTickers[index].price = response.data.c;
+      // בדיקה אם קיבלנו תגובה תקינה עם מחיר
+      if (response.data && response.data.c !== undefined) {
+        updatedTickers[index].price = response.data.c; // עדכון המחיר
       } else {
-        console.log('Received invalid price for', uppercaseInput, ':', response.data.c);
-        // Optional: handle invalid price, e.g., keep the old price or set to null
+        console.log('Received invalid data for', uppercaseInput);
+        // השארת המחיר הקודם או טיפול אחר לבחירתך
       }
     } catch (error) {
       console.error('Error fetching stock price:', error);
-      // Optional: handle error, e.g., keep the old price or set to null
+      // השארת המחיר הקודם או טיפול אחר לבחירתך
     }
   } else {
-    updatedTickers[index][key] = ['price', 'Quantity', 'ExitPrice', 'stopLose'].includes(key) ? parseFloat(value) || 0 : value;
+    // עדכון ישיר של הערך, לאחר המרה למספר אם נדרש
+    updatedTickers[index][key] = ['price', 'Quantity', 'ExitPrice', 'stopLose'].includes(key) ? parseFloat(value) || updatedTickers[index][key] : value;
   }
 
+  // עדכון הסטייט עם המערך המעודכן
   props.setTickers(updatedTickers);
 };
-
-  // עדכון הסטייט עם המערך המעודכן
-  props.setTickers(
-
-  // Finally, update the state with the new tickers array.
-  props.setTickers(
-  // חישוב נוסף ועדכון הסטייט
-  updatedTickers[index].TotalCost = updatedTickers[index].Quantity * updatedTickers[index].price;
-  updatedTickers[index].ExpectedProfit = (updatedTickers[index].ExitPrice * updatedTickers[index].Quantity) - (updatedTickers[index].price * updatedTickers[index].Quantity);
-  updatedTickers[index].ExpectedLose = Math.abs(updatedTickers[index].stopLose * updatedTickers[index].Quantity - updatedTickers[index].price * updatedTickers[index].Quantity);
-
-  props.setTickers(updatedTickers);
-  localStorage.setItem('Tickers', JSON.stringify(
 
 //החלפת צבע של הכפתורים
 const chengeColor = (index, type) => {
