@@ -1,7 +1,7 @@
 import React, { useState,useEffect } from 'react'
 import './style.css'
 
-import {  useNavigate } from 'react-router-dom';
+import { json, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie'
 import Modal  from 'react-bootstrap/Modal';
@@ -428,49 +428,53 @@ useEffect(() => {
 
 
 const inputes = (row) => {
-  const { Tickers, index } = props;
+
+  //const row = 9
+  if(props.Tickers.length == row){
+    
+    if(row==9){
+      nav('/package1')
+    }
+    else if(row==24){
+      nav('/package2')
+    }
+    else if(row==49){
+      nav('/package3')
+    }
   
-  // בדיקה אם השורה כבר קיימת ברשימת השורות
-  const isRowExists = Tickers.findIndex(item => 
-    item.row === row && item.index === index
-  ) !== -1;
-
-  if (isRowExists) {
-    // השורה כבר קיימת, חזור מבלי להוסיף
-    return;
+    props.addTickers(Ticker, Quantity, price, exitPrice, stopLose,props.index);
+    return
+  
   }
+  else{
+  
+     
+     
+      if(price===0 && actualPrice===0 ){
+       setShowAlertPrice(true)
+        return
+      }
+      if(Quantity===0){
+        setShowAlertQuantity(true)
+        return
+      }
+    
+      props.addTickers(Ticker, Quantity, price, exitPrice, stopLose,props.index);
+    
+      setTicker('');
+      setQuantity(0);
+      setPrice(0);
+      setExitPrice(0);
+      setStopLose(0);
+      setActualPrice(0)
+     
 
-  if (props.Tickers.length === row) {
-    if (row === 9) {
-      nav('/package1');
-    } else if (row === 24) {
-      nav('/package2');
-    } else if (row === 49) {
-      nav('/package3');
     }
 
-    props.addTickers(Ticker, Quantity, price, exitPrice, stopLose, index);
-    return;
-  } else {
-    if (price === 0 && actualPrice === 0) {
-      setShowAlertPrice(true);
-      return;
-    }
-    if (Quantity === 0) {
-      setShowAlertQuantity(true);
-      return;
-    }
 
-    props.addTickers(Ticker, Quantity, price, exitPrice, stopLose, index);
 
-    setTicker('');
-    setQuantity(0);
-    setPrice(0);
-    setExitPrice(0);
-    setStopLose(0);
-    setActualPrice(0);
-  }
-};
+  };
+  
   
 
 
