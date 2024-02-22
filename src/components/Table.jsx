@@ -134,129 +134,38 @@ const [actualPrice,setActualPrice] = useState(0)
 
 
 //הצגת נתונים בטבלה 
-const handleChange = (index, key, value) => {
-  const newTickers = [...props.Tickers];
-  newTickers[index][key] = Number(value);
-  newTickers[index][key] = String(value);
-  
+const handleChange = async (index, key, value) => {
+  let updatedTickers = [...props.Tickers];
 
   if (key === 'Ticker') {
     const uppercaseInput = value.toUpperCase();
-    setTicker(String(uppercaseInput));
-    axios
-      .get(`https://finnhub.io/api/v1/quote?symbol=${value}&token=${apiKey}`)
-      .then((response) => {
-        const stockPrice = response.data.c;
-        setActualPrice(Number(stockPrice));
-        document.getElementById(`Actual${index}`).innerHTML = `$${stockPrice}`;
-        newTickers[index].price = Number(stockPrice);
-        setPrice(Number(stockPrice));
+    updatedTickers[index][key] = uppercaseInput; // עדכון ה-Ticker לאותיות גדולות
 
-        if (newTickers[index].Quantity && newTickers[index].price) {
-          newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-        } else {
-          newTickers[index].TotalCost = 0;
-        }
-
-        localStorage.setItem('Tickers', JSON.stringify(newTickers));
-        localStorage.setItem('TickerValue', value);
-        props.setTickers(newTickers);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-  } else if (key === 'price') {
-    setPrice(Number(value));
-    newTickers[index].price = Number(value);
-
-    if (newTickers[index].Quantity && newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-    } else if (newTickers[index].Quantity && !newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice;
+    try {
+      const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${uppercaseInput}&token=${apiKey}`);
+      const stockPrice = response.data.c;
+      updatedTickers[index].price = stockPrice; // עדכון המחיר מה-API
+      // עדכון נוסף למצב ול-localStorage אם נדרש, ללא שימוש ב-DOM
+    } catch (error) {
+      console.error('Error fetching stock price:', error);
+      // טיפול בשגיאה - אפשר להשאיר את המחיר כפי שהוא או לסמן שגיאה במצב
+    }
+  } else {
+    // עבור שאר המקרים, בדוק אם הערך צריך להיות מספר
+    if (['price', 'Quantity', 'ExitPrice', 'stopLose'].includes(key)) {
+      updatedTickers[index][key] = value ? parseFloat(value) : 0;
     } else {
-      newTickers[index].TotalCost = 0;
+      updatedTickers[index][key] = value;
     }
-
-    localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('priceValue', value);
-    props.setTickers(newTickers);
-
-    if (value && exitPrice && Quantity) {
-      newTickers[index].ExpectedProfit =
-        newTickers[index].ExitPrice * newTickers[index].Quantity - newTickers[index].Quantity * newTickers[index].price;
-    } else {
-      newTickers[index].ExpectedProfit = 0;
-    }
-
-    
-  } else if (key === 'Quantity') {
-    setQuantity(Number(value));
-    newTickers[index].Quantity = Number(value);
-
-    if (newTickers[index].Quantity && newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-    }
-   else if (newTickers[index].Quantity && !newTickers[index].price) {
-    newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice;
-  }else {
-      newTickers[index].TotalCost = 0;
-    }
-
-    localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('inputValue', value);
-    props.setTickers(newTickers);
-    
-
-    //when change quantity expicted profit changed
-    if (value && exitPrice) {
-      newTickers[index].ExpectedProfit =
-        newTickers[index].ExitPrice * newTickers[index].Quantity - newTickers[index].Quantity * newTickers[index].price;
-    } else {
-      newTickers[index].ExpectedProfit = 0;
-    }
-
-    /*if(one>0){
-      setActualPrice(0)
-    }
-    setOne(0)*/
-    
-  } else if (key === 'ExitPrice') {
-    setExitPrice(Number(value));
-    newTickers[index].ExitPrice = Number(value);
-
-    if (value && Quantity && price) {
-      newTickers[index].ExpectedProfit =
-        newTickers[index].ExitPrice * newTickers[index].Quantity - newTickers[index].Quantity * newTickers[index].price;
-    } else {
-      newTickers[index].ExpectedProfit = 0;
-    }
-
-    localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('exitValue', value);
-    props.setTickers(newTickers);
-  } else if (key === 'stopLose') {
-    setStopLose(Number(value));
-    newTickers[index].stopLose = Number(value);
-
-    if (value) {
-      newTickers[index].ExpectedLose = Math.abs(
-        newTickers[index].stopLose * newTickers[index].Quantity - newTickers[index].price * newTickers[index].Quantity
-      );
-    } else {
-      newTickers[index].ExpectedLose = 0;
-    }
-
-    if (!newTickers[index].Quantity || !newTickers[index].price) {
-      newTickers[index].TotalCost = 0;
-    }
-
-    localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('stopValue', value);
-    props.setTickers(newTickers);
   }
 
-  //setActualPrice(0)
-};
+  // חישוב נוסף ועדכון הסטייט
+  updatedTickers[index].TotalCost = updatedTickers[index].Quantity * updatedTickers[index].price;
+  updatedTickers[index].ExpectedProfit = (updatedTickers[index].ExitPrice * updatedTickers[index].Quantity) - (updatedTickers[index].price * updatedTickers[index].Quantity);
+  updatedTickers[index].ExpectedLose = Math.abs(updatedTickers[index].stopLose * updatedTickers[index].Quantity - updatedTickers[index].price * updatedTickers[index].Quantity);
+
+  props.setTickers(updatedTickers);
+  localStorage.setItem('Tickers', JSON.stringify(
 
 //החלפת צבע של הכפתורים
 const chengeColor = (index, type) => {
