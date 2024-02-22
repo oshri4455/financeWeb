@@ -143,22 +143,30 @@ const handleChange = async (index, key, value) => {
 
     try {
       const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${uppercaseInput}&token=${apiKey}`);
-      const stockPrice = response.data.c;
-      updatedTickers[index].price = stockPrice; // עדכון המחיר מה-API
-      // עדכון נוסף למצב ול-localStorage אם נדרש, ללא שימוש ב-DOM
+      if(response && response.data && response.data.c !== undefined) {
+        const stockPrice = response.data.c;
+        updatedTickers[index].price = stockPrice; // עדכון המחיר מה-API
+      } else {
+        console.log("No valid data for ticker:", uppercaseInput);
+        // Consider handling the case when API doesn't return a valid price.
+        // Maybe keep the previous price or set it to null/undefined.
+      }
     } catch (error) {
       console.error('Error fetching stock price:', error);
-      // טיפול בשגיאה - אפשר להשאיר את המחיר כפי שהוא או לסמן שגיאה במצב
+      // Consider handling errors more gracefully.
+      // Maybe keep the previous price or set it to null/undefined.
     }
   } else {
-    // עבור שאר המקרים, בדוק אם הערך צריך להיות מספר
+    // For other keys, update the value directly. Convert to number if applicable.
     if (['price', 'Quantity', 'ExitPrice', 'stopLose'].includes(key)) {
-      updatedTickers[index][key] = value ? parseFloat(value) : 0;
+      updatedTickers[index][key] = value ? parseFloat(value) : updatedTickers[index][key];
     } else {
       updatedTickers[index][key] = value;
     }
   }
 
+  // Finally, update the state with the new tickers array.
+  props.setTickers(
   // חישוב נוסף ועדכון הסטייט
   updatedTickers[index].TotalCost = updatedTickers[index].Quantity * updatedTickers[index].price;
   updatedTickers[index].ExpectedProfit = (updatedTickers[index].ExitPrice * updatedTickers[index].Quantity) - (updatedTickers[index].price * updatedTickers[index].Quantity);
