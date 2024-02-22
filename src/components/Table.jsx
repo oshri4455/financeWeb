@@ -406,23 +406,24 @@ useEffect(() => {
 
 
 
+  // כאן תחליף במפתח ה-API שלך
+  const apiKey = 'ci26vg1r01qqjoq0o0ngci26vg1r01qqjoq0o0o0';
 
-const apiKey = 'ci26vg1r01qqjoq0o0ngci26vg1r01qqjoq0o0o0';
-useEffect(() => {
-  const fetchStockPrice = async () => {
-    try {
-      const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${Ticker}&token=${apiKey}`);
-      const price = response.data.c;
-      setPrice(price);
-    } catch (error) {
-      console.error('Error:', error);
+  useEffect(() => {
+    if (ticker) {
+      const fetchStockPrice = async () => {
+        try {
+          const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
+          setPrice(response.data.c); // 'c' מייצג את המחיר הנוכחי ב-API של Finnhub
+        } catch (error) {
+          console.error('Error fetching stock price:', error);
+          setPrice(0); // איפוס המחיר במקרה של שגיאה
+        }
+      };
+
+      fetchStockPrice();
     }
-  };
-
-  if (Ticker) {
-    fetchStockPrice();
-  }
-}, [Ticker]);
+  }, [ticker, apiKey]); // ה-Effect יתבצע מחדש כל פעם שה-Ticker
 
 
 
