@@ -133,34 +133,32 @@ const [actualPrice,setActualPrice] = useState(0)
 
 
 
-//הצגת נתונים בטבלה const handleChange = async (index, key, value) => {
+//הצגת נתונים בטבלה
+ const handleChange = async (index, key, value) => {
   let updatedTickers = [...props.Tickers];
 
   if (key === 'Ticker') {
     const uppercaseInput = value.toUpperCase();
-    // טען מחיר עבור ה-Ticker המעודכן
+    updatedTickers[index][key] = uppercaseInput;
+
     try {
       const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${uppercaseInput}&token=${apiKey}`);
-      if (response.data && response.data.c !== undefined) {
-        // עדכון ה-Ticker והמחיר במערך העותק
-        updatedTickers[index].Ticker = uppercaseInput;
+      if (response.data && response.data.c && response.data.c !== 0) {
         updatedTickers[index].price = response.data.c;
       } else {
-        console.error('No price data received for:', uppercaseInput);
-        // אופציונלי: ניתן להחליט כיצד לטפל אם אין נתוני מחיר
+        console.log('Received invalid price for', uppercaseInput, ':', response.data.c);
+        // Optional: handle invalid price, e.g., keep the old price or set to null
       }
     } catch (error) {
       console.error('Error fetching stock price:', error);
-      // אופציונלי: ניתן להחליט כיצד לטפל בשגיאה
+      // Optional: handle error, e.g., keep the old price or set to null
     }
   } else {
-    // עבור כל שדה אחר, עדכן את הערך ישירות
-    if (['price', 'Quantity', 'ExitPrice', 'stopLose'].includes(key)) {
-      updatedTickers[index][key] = value ? parseFloat(value) : 0;
-    } else {
-      updatedTickers[index][key] = value;
-    }
+    updatedTickers[index][key] = ['price', 'Quantity', 'ExitPrice', 'stopLose'].includes(key) ? parseFloat(value) || 0 : value;
   }
+
+  props.setTickers(updatedTickers);
+};
 
   // עדכון הסטייט עם המערך המעודכן
   props.setTickers(
