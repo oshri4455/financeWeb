@@ -138,19 +138,18 @@ const handleChange = (index, key, value) => {
   const newTickers = [...props.Tickers];
   newTickers[index][key] = Number(value);
   newTickers[index][key] = String(value);
-  
 
   if (key === 'Ticker') {
     const uppercaseInput = value.toUpperCase();
     setTicker(String(uppercaseInput));
+
     axios
       .get(`https://finnhub.io/api/v1/quote?symbol=${value}&token=${apiKey}`)
       .then((response) => {
-        const stockPrice = response.data.c;
+        const stockPrice = response.data.c; // אם המחיר ממוזג תחת המאפיין 'c'
         setActualPrice(Number(stockPrice));
         document.getElementById(`Actual${index}`).innerHTML = `$${stockPrice}`;
         newTickers[index].price = Number(stockPrice);
-        setPrice(Number(stockPrice));
 
         if (newTickers[index].Quantity && newTickers[index].price) {
           newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
@@ -187,39 +186,28 @@ const handleChange = (index, key, value) => {
     } else {
       newTickers[index].ExpectedProfit = 0;
     }
-
-    
   } else if (key === 'Quantity') {
     setQuantity(Number(value));
     newTickers[index].Quantity = Number(value);
 
     if (newTickers[index].Quantity && newTickers[index].price) {
       newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-    }
-   else if (newTickers[index].Quantity && !newTickers[index].price) {
-    newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice;
-  }else {
+    } else if (newTickers[index].Quantity && !newTickers[index].price) {
+      newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice;
+    } else {
       newTickers[index].TotalCost = 0;
     }
 
     localStorage.setItem('Tickers', JSON.stringify(newTickers));
     localStorage.setItem('inputValue', value);
     props.setTickers(newTickers);
-    
 
-    //when change quantity expicted profit changed
     if (value && exitPrice) {
       newTickers[index].ExpectedProfit =
         newTickers[index].ExitPrice * newTickers[index].Quantity - newTickers[index].Quantity * newTickers[index].price;
     } else {
       newTickers[index].ExpectedProfit = 0;
     }
-
-    /*if(one>0){
-      setActualPrice(0)
-    }
-    setOne(0)*/
-    
   } else if (key === 'ExitPrice') {
     setExitPrice(Number(value));
     newTickers[index].ExitPrice = Number(value);
@@ -254,8 +242,6 @@ const handleChange = (index, key, value) => {
     localStorage.setItem('stopValue', value);
     props.setTickers(newTickers);
   }
-
-  //setActualPrice(0)
 };
 
 //החלפת צבע של הכפתורים
@@ -407,7 +393,7 @@ useEffect(() => {
 
 
 
-const apiKey = 'ci26vg1r01qqjoq0o0ngci26vg1r01qqjoq0o0o0';
+const apiKey = 'cneteo1r01qi6fto34vgcneteo1r01qi6fto3500';
 useEffect(() => {
   const fetchStockPrice = async () => {
     try {
