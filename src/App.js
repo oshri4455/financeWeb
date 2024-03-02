@@ -191,11 +191,12 @@ const delRow = (username, rowIndex) => {
     console.log(`User ${username} not found`);
   }
 }
-const addTickers = (t, q, p, e, sl, index) => {
+const addTickers = (t, q,a, p, e, sl, index) => {
   const newTicker = {
     Ticker: String(t),
     Quantity: Number(q),
     price: Number(p),
+    actualPrice:a,
     ExitPrice: Number(e),
     stopLose: Number(sl),
     TotalCost: 0,
@@ -258,7 +259,7 @@ updatedUsers[userIndex] = updatedUser;
       // Clearing the input values
       Tickers.forEach((val, index) => {
         
-        document.getElementById(`Actual${index}`).innerHTML = '';
+       
         document.getElementById(`quantity${index}`).value = '';
         document.getElementById(`Ticker${index}`).value = '';
         document.getElementById(`price${index}`).value = '';

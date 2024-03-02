@@ -18,6 +18,7 @@ const [Ticker,setTicker] =useState('')
 const[stopLose,setStopLose] =useState(0)
 const[Quantity,setQuantity] = useState(0)
 const[price,setPrice] = useState(0)
+const [prices,setPrices] =useState({})
 const [chengeConditoin, setCengeConditoin] = useState( props.Tickers.map((_, index) => 'Buy'));
 
 
@@ -138,47 +139,36 @@ const handleChange = (index, key, value) => {
   const newTickers = [...props.Tickers];
   newTickers[index][key] = Number(value);
   newTickers[index][key] = String(value);
-
   if (key === 'Ticker') {
-    const uppercaseInput = value.toUpperCase();
-    setTicker(String(uppercaseInput));
-
-    axios
-      .get(`https://finnhub.io/api/v1/quote?symbol=${value}&token=${apiKey}`)
-      .then((response) => {
-        const stockPrice = response.data.c; // אם המחיר ממוזג תחת המאפיין 'c'
-        setActualPrice(Number(stockPrice));
-        document.getElementById(`Actual${index}`).innerHTML = `$${stockPrice}`;
-        newTickers[index].price = Number(stockPrice);
-
-        if (newTickers[index].Quantity && newTickers[index].price) {
-          newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-        } else {
-          newTickers[index].TotalCost = 0;
-        }
-
-        localStorage.setItem('Tickers', JSON.stringify(newTickers));
-        localStorage.setItem('TickerValue', value);
-        props.setTickers(newTickers);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-  } else if (key === 'price') {
-    setPrice(Number(value));
-    newTickers[index].price = Number(value);
-
+    const newTicker = value.toUpperCase();
+    fetchStockPrice(newTicker, index);
+    setPrices(Number(value))
     if (newTickers[index].Quantity && newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
-    } else if (newTickers[index].Quantity && !newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice;
-    } else {
+      newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price * Quantity;
+      } 
+      
+      else {
       newTickers[index].TotalCost = 0;
     }
 
     localStorage.setItem('Tickers', JSON.stringify(newTickers));
-    localStorage.setItem('priceValue', value);
+    localStorage.setItem('TickerValue', value);
     props.setTickers(newTickers);
+
+  } else if (key === 'price') {
+ 
+    setPrice(Number(value));
+    newTickers[index].price = Number(value);
+    
+    if (newTickers[index].Quantity && newTickers[index].price) {
+      newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
+    } else if (newTickers[index].Quantity && !newTickers[index].price) {
+      newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice[index];
+    } else {
+      newTickers[index].TotalCost = 0;
+    }
+
+
 
     if (value && exitPrice && Quantity) {
       newTickers[index].ExpectedProfit =
@@ -193,7 +183,7 @@ const handleChange = (index, key, value) => {
     if (newTickers[index].Quantity && newTickers[index].price) {
       newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
     } else if (newTickers[index].Quantity && !newTickers[index].price) {
-      newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice;
+      newTickers[index].TotalCost = newTickers[index].Quantity * actualPrice[index];
     } else {
       newTickers[index].TotalCost = 0;
     }
@@ -270,7 +260,7 @@ const clearButton = (username,index) => {
     document.getElementById(`price${index}`).value = ''
     document.getElementById(`exit${index}`).value = ''
     document.getElementById(`stop${index}`).value = ''
-    document.getElementById(`Actual${index}`).innerHTML=''
+
 
     setPrice('')
     setQuantity('')
@@ -394,25 +384,25 @@ useEffect(() => {
 
 
 const apiKey = 'cneteo1r01qi6fto34vgcneteo1r01qi6fto3500';
-useEffect(() => {
-  const fetchStockPrice = async () => {
-    try {
-      const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${Ticker}&token=${apiKey}`);
-      const price = response.data.c;
-      setPrice(price);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
 
-  if (Ticker) {
-    fetchStockPrice();
+const handlePriceButtonClick = (index) => {
+  const tickerInput = document.getElementById(`Ticker${index}`);
+  const ticker = tickerInput.value.toUpperCase();
+  fetchStockPrice(ticker, index);
+
+  
+};
+const fetchStockPrice = async (ticker, index) => {
+  try {
+    const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
+    const data = await response.json();
+    const newPrices = { ...prices };
+    newPrices[index] = data.c;
+    setActualPrice(newPrices);
+  } catch (error) {
+    console.error('Error fetching stock price:', error);
   }
-}, [Ticker]);
-
-
-
-
+};
 const inputes = (row) => {
 
   //const row = 9
@@ -428,7 +418,7 @@ const inputes = (row) => {
       nav('/package3')
     }
   
-    props.addTickers(Ticker, Quantity, price, exitPrice, stopLose,props.index);
+    props.addTickers(Ticker, Quantity,actualPrice, price, exitPrice, stopLose,props.index);
     return
   
   }
@@ -445,7 +435,7 @@ const inputes = (row) => {
         return
       }
     
-      props.addTickers(Ticker, Quantity, price, exitPrice, stopLose,props.index);
+      props.addTickers(Ticker, Quantity,actualPrice, price, exitPrice, stopLose,props.index);
     
       setTicker('');
       setQuantity(0);
@@ -571,6 +561,7 @@ const inputes = (row) => {
    <table id='table'>
 <thead>
 <tr >
+  <th></th>
 <th >Ticker</th>
 <th >Long/Short</th>
 <th >Quantity</th>
@@ -587,31 +578,31 @@ const inputes = (row) => {
 </thead>
 
 <tbody>
-{props.Tickers.map((val,index)=>{
-  return  <tr key={index} style={{ backgroundColor: index % 2 === 0 ? 'white' : 'whitesmoke' }}>
-  <td title='Enter Ticker'><input  id={`Ticker${index}`} style={{textTransform:'uppercase',position:'relative',top:'12px',width:'60px'}}  onChange={(e) => { handleChange(index, 'Ticker', e.target.value) }} type="text" /></td>
-  <td title='Click Buy Or Sell '>
-        <button  onClick={() => { chengeColor(index, 'Buy'); buyAndSell(index, 'Buy') }}  style={{ backgroundColor: chengeConditoin[index] === 'Buy' || !chengeConditoin[index] ? 'green' : 'gray', color: 'white',borderRadius:'10px',margin:'3px'}}>Long</button>
-        <button  onClick={() => { chengeColor(index, 'Sell'); buyAndSell(index, 'Sell') }}  style={{ backgroundColor: chengeConditoin[index] === 'Sell' ? 'red' : 'gray', color: 'white',borderRadius:'10px' }}>Short</button>
+{props.Tickers.map((val, index) => (
+    <tr key={index} style={{ backgroundColor: index % 2 === 0 ? 'white' : 'whitesmoke' }}>
+     <td><button id='btnActual' onClick={() => handlePriceButtonClick(index)}>Get Actual Price</button></td>
+     <td title='Enter Ticker'><input id={`Ticker${index}`} onChange={(e)=>{setTicker(e.target.value)}} style={{ textTransform: 'uppercase', position: 'relative', top: '12px', width: '60px' }} type="text" /></td>
+      <td title='Click Buy Or Sell '>
+        <button onClick={() => { chengeColor(index, 'Buy'); buyAndSell(index, 'Buy') }} style={{ backgroundColor: chengeConditoin[index] === 'Buy' || !chengeConditoin[index] ? 'green' : 'gray', color: 'white', borderRadius: '10px', margin: '3px' }}>Long</button>
+        <button onClick={() => { chengeColor(index, 'Sell'); buyAndSell(index, 'Sell') }} style={{ backgroundColor: chengeConditoin[index] === 'Sell' ? 'red' : 'gray', color: 'white', borderRadius: '10px' }}>Short</button>
       </td>
-  <td title='Enter Quantity'><input   onKeyDown={(e) => {if (e.key === 'e' || e.key === 'E') { e.preventDefault(); }}} id={`quantity${index}`}   onChange={(e) => { handleChange(index, 'Quantity', e.target.value) }} type="number" /></td>
-  <td style={{fontWeight:'bold'}} title='Price Of Ticker' id={`Actual${index}`}></td>
-  <td title='Enter Price'><input  onKeyDown={(e) => {if (e.key === 'e' || e.key === 'E') { e.preventDefault(); }}} id={`price${index}`}  onChange={(e) => { handleChange(index, 'price', e.target.value) }} type="number" /></td>
-  <td title='Total Cost' style={{fontWeight:'bold'}} id='totalCost'>${Math.round(val.TotalCost)}</td>
-  <td title='Enter Exit Price'><input id={`exit${index}`}  onKeyDown={(e) => {if (e.key === 'e' || e.key === 'E') { e.preventDefault(); }}}  onChange={(e)=>{handleChange(index,'ExitPrice' ,e.target.value)}} type="number" /></td>
-  <td style={{ color: 'green' ,fontWeight:'bold'}} id='e' title='Expected Profit'>{showExpected(val.ExpectedProfit)}</td>
-  <td title='Enter Stop Lose'><input id={`stop${index}`}  onKeyDown={(e) => {if (e.key === 'e' || e.key === 'E') { e.preventDefault(); }}}  onChange={(e) => {handleChange(index,'stopLose',e.target.value)}} type="number" /></td>
-  <td  style={{ color: 'red' }}  title='Expected Lose'>-${Math.round(val.ExpectedLose)}</td>
-
-  <td id='clearbtn'>
-{props.Tickers.length === 1 ? (
-  <button  onClick={()=>{clearButton(props.userName,index)}} style={{borderRadius:'10px',backgroundColor:'rgb(20, 255, 255)' }}>Clear</button>
-) : (
-  <button  onClick={()=>{props.delRow(props.userName,index)}} style={{borderRadius:'10px',backgroundColor:'rgb(20, 255, 255)' }}>Clear</button>
-)}
-</td>
-</tr>
-})}   </tbody>     
+      <td title='Enter Quantity'><input onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E') { e.preventDefault(); } }} id={`quantity${index}`} onChange={(e) => { handleChange(index, 'Quantity', e.target.value) }} type="number" /></td>
+      <td style={{ fontWeight: 'bold' }} title='Price Of Ticker'>{actualPrice[index]}</td> {/* כאן מוצג המחיר */}
+      <td title='Enter Price'><input onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E') { e.preventDefault(); } }} id={`price${index}`} onChange={(e) => { handleChange(index, 'price', e.target.value) }} type="number" /></td>
+      <td title='Total Cost' style={{ fontWeight: 'bold' }} id='totalCost'>${Math.round(val.TotalCost)}</td>
+      <td title='Enter Exit Price'><input id={`exit${index}`} onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E') { e.preventDefault(); } }} onChange={(e) => { handleChange(index, 'ExitPrice', e.target.value) }} type="number" /></td>
+      <td style={{ color: 'green', fontWeight: 'bold' }} id='e' title='Expected Profit'>{showExpected(val.ExpectedProfit)}</td>
+      <td title='Enter Stop Lose'><input id={`stop${index}`} onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E') { e.preventDefault(); } }} onChange={(e) => { handleChange(index, 'stopLose', e.target.value) }} type="number" /></td>
+      <td style={{ color: 'red' }} title='Expected Lose'>-${Math.round(val.ExpectedLose)}</td>
+      <td id='clearbtn'>
+        {props.Tickers.length === 1 ? (
+          <button onClick={() => { clearButton(props.userName, index) }} style={{ borderRadius: '10px', backgroundColor: 'rgb(20, 255, 255)' }}>Clear</button>
+        ) : (
+          <button onClick={() => { props.delRow(props.userName, index) }} style={{ borderRadius: '10px', backgroundColor: 'rgb(20, 255, 255)' }}>Clear</button>
+        )}
+      </td>
+    </tr>
+  ))} </tbody>     
         </table>  
 
         <br />
