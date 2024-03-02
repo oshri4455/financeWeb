@@ -1058,6 +1058,19 @@ left: 60px;
 
 
 
+  #divTble {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.450),rgba(0, 0, 0, 0.450)),url(../img/cover.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    overflow-x: scroll;
+  }
 
 
 
