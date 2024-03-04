@@ -140,9 +140,9 @@ const handleChange = (index, key, value) => {
   newTickers[index][key] = Number(value);
   newTickers[index][key] = String(value);
   if (key === 'Ticker') {
-    const newTicker = value.toUpperCase();
-    fetchStockPrice(newTicker, index);
-    setPrices(Number(value))
+  newTickers[index].Ticker = String(value)
+  setTicker(String(value))
+  
     if (newTickers[index].Quantity && newTickers[index].price) {
       newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price * Quantity;
       } 
@@ -156,9 +156,10 @@ const handleChange = (index, key, value) => {
     props.setTickers(newTickers);
 
   } else if (key === 'price') {
- 
+ newTickers[index].actualPrice = Number(value)
     setPrice(Number(value));
     newTickers[index].price = Number(value);
+ 
     
     if (newTickers[index].Quantity && newTickers[index].price) {
       newTickers[index].TotalCost = newTickers[index].Quantity * newTickers[index].price;
@@ -177,6 +178,7 @@ const handleChange = (index, key, value) => {
       newTickers[index].ExpectedProfit = 0;
     }
   } else if (key === 'Quantity') {
+    
     setQuantity(Number(value));
     newTickers[index].Quantity = Number(value);
 
@@ -202,7 +204,7 @@ const handleChange = (index, key, value) => {
     setExitPrice(Number(value));
     newTickers[index].ExitPrice = Number(value);
 
-    if (value && Quantity && price) {
+    if (value && exitPrice) {
       newTickers[index].ExpectedProfit =
         newTickers[index].ExitPrice * newTickers[index].Quantity - newTickers[index].Quantity * newTickers[index].price;
     } else {
@@ -216,7 +218,7 @@ const handleChange = (index, key, value) => {
     setStopLose(Number(value));
     newTickers[index].stopLose = Number(value);
 
-    if (value) {
+    if (value ) {
       newTickers[index].ExpectedLose = Math.abs(
         newTickers[index].stopLose * newTickers[index].Quantity - newTickers[index].price * newTickers[index].Quantity
       );
@@ -224,10 +226,7 @@ const handleChange = (index, key, value) => {
       newTickers[index].ExpectedLose = 0;
     }
 
-    if (!newTickers[index].Quantity || !newTickers[index].price) {
-      newTickers[index].TotalCost = 0;
-    }
-
+   
     localStorage.setItem('Tickers', JSON.stringify(newTickers));
     localStorage.setItem('stopValue', value);
     props.setTickers(newTickers);
@@ -396,7 +395,7 @@ const fetchStockPrice = async (ticker, index) => {
   try {
     const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
     const data = await response.json();
-    const newPrices = { ...prices };
+    const newPrices = { ...actualPrice };
     newPrices[index] = data.c;
     setActualPrice(newPrices);
   } catch (error) {
@@ -581,13 +580,13 @@ const inputes = (row) => {
 {props.Tickers.map((val, index) => (
     <tr key={index} style={{ backgroundColor: index % 2 === 0 ? 'white' : 'whitesmoke' }}>
      <td><button id='btnActual' onClick={() => handlePriceButtonClick(index)}>Get Actual Price</button></td>
-     <td title='Enter Ticker'><input id={`Ticker${index}`} onChange={(e)=>{setTicker(e.target.value)}} style={{ textTransform: 'uppercase', position: 'relative', top: '12px', width: '60px' }} type="text" /></td>
+     <td title='Enter Ticker'><input id={`Ticker${index}`} onChange={(e) => { handleChange(index, 'Ticker', e.target.value) }} style={{ textTransform: 'uppercase', position: 'relative', top: '12px', width: '60px' }} type="text" /></td>
       <td title='Click Buy Or Sell '>
         <button onClick={() => { chengeColor(index, 'Buy'); buyAndSell(index, 'Buy') }} style={{ backgroundColor: chengeConditoin[index] === 'Buy' || !chengeConditoin[index] ? 'green' : 'gray', color: 'white', borderRadius: '10px', margin: '3px' }}>Long</button>
         <button onClick={() => { chengeColor(index, 'Sell'); buyAndSell(index, 'Sell') }} style={{ backgroundColor: chengeConditoin[index] === 'Sell' ? 'red' : 'gray', color: 'white', borderRadius: '10px' }}>Short</button>
       </td>
       <td title='Enter Quantity'><input onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E') { e.preventDefault(); } }} id={`quantity${index}`} onChange={(e) => { handleChange(index, 'Quantity', e.target.value) }} type="number" /></td>
-      <td style={{ fontWeight: 'bold' }} title='Price Of Ticker'>{actualPrice[index]}</td> {/* כאן מוצג המחיר */}
+      <td style={{ fontWeight: 'bold' }} title='Price Of Ticker'>{actualPrice[index]}$</td> 
       <td title='Enter Price'><input onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E') { e.preventDefault(); } }} id={`price${index}`} onChange={(e) => { handleChange(index, 'price', e.target.value) }} type="number" /></td>
       <td title='Total Cost' style={{ fontWeight: 'bold' }} id='totalCost'>${Math.round(val.TotalCost)}</td>
       <td title='Enter Exit Price'><input id={`exit${index}`} onKeyDown={(e) => { if (e.key === 'e' || e.key === 'E') { e.preventDefault(); } }} onChange={(e) => { handleChange(index, 'ExitPrice', e.target.value) }} type="number" /></td>
